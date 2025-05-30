@@ -12,23 +12,23 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import TextField from '@mui/material/TextField';
-import Grid from '@mui/material/Grid';
 
 // No DialogActions needed if form has its own cancel/save
 
-// Debounce function
-function debounce<F extends (...args: unknown[]) => unknown>(func: F, waitFor: number) {
+// Debounce function specifically for our use case
+function debounce(
+  func: (filters: ResourceFilters) => Promise<void>, 
+  waitFor: number
+): (filters: ResourceFilters) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
-  const debounced = (...args: Parameters<F>) => {
+  return (filters: ResourceFilters) => {
     if (timeout !== null) {
       clearTimeout(timeout);
       timeout = null;
     }
-    timeout = setTimeout(() => func(...args), waitFor);
+    timeout = setTimeout(() => func(filters), waitFor);
   };
-
-  return debounced as (...args: Parameters<F>) => void;
 }
 
 const ResourceList: React.FC = () => {
@@ -62,8 +62,9 @@ const ResourceList: React.FC = () => {
   }, [fetchResources]);
 
   useEffect(() => {
-    fetchResources(filters); // Initial fetch with default filters
-  }, [fetchResources]); // filters removed from here to prevent re-fetch on every keystroke before debounce
+    // Initial fetch with empty filters
+    fetchResources({ name: '', description: '' });
+  }, [fetchResources]);
 
   const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -129,19 +130,26 @@ const ResourceList: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Resources
-        </Typography>
-        <Button variant="contained" color="primary" onClick={handleOpenCreateModal}>
-          Create Resource
-        </Button>
-      </Box>
+    <Box sx={{ 
+      display: 'flex',
+      justifyContent: 'center',
+      width: '100%',
+      minHeight: '100vh',
+      pt: 4,
+      px: 2
+    }}>
+      <Box sx={{ width: '100%', maxWidth: '960px' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1">
+            Resources
+          </Typography>
+          <Button variant="contained" color="primary" onClick={handleOpenCreateModal}>
+            Create Resource
+          </Button>
+        </Box>
 
-      {/* Filter Controls */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6}>
+        {/* Filter Controls */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
           <TextField
             fullWidth
             label="Filter by Name"
@@ -151,8 +159,6 @@ const ResourceList: React.FC = () => {
             variant="outlined"
             size="small"
           />
-        </Grid>
-        <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
             label="Filter by Description"
@@ -162,36 +168,36 @@ const ResourceList: React.FC = () => {
             variant="outlined"
             size="small"
           />
-        </Grid>
-      </Grid>
+        </Box>
 
-      {error && resources.length > 0 && <Alert severity="warning" sx={{mb: 2}}>Could not refresh all data: {error}</Alert>}
-      {loading && resources.length > 0 && <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}><CircularProgress size={20}/></Box>}
+        {error && resources.length > 0 && <Alert severity="warning" sx={{mb: 2}}>Could not refresh all data: {error}</Alert>}
+        {loading && resources.length > 0 && <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}><CircularProgress size={20}/></Box>}
 
-      {resources.length === 0 && !loading && !error ? (
-        <Typography>No resources found. Click "Create Resource" to add one.</Typography>
-      ) : (
-        resources.map(resource => (
-          <ResourceCard 
-            key={resource.id} 
-            resource={resource} 
-            onEdit={handleEdit} 
-            onDelete={handleDelete} 
-          />
-        ))
-      )}
-      
-      <Dialog open={isCreateModalOpen || isEditModalOpen} onClose={handleModalClose} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingResource ? 'Edit Resource' : 'Create New Resource'}</DialogTitle>
-        <DialogContent>
-          <ResourceForm 
-            resource={editingResource} 
-            onSave={handleResourceSaved} 
-            onClose={handleModalClose} 
-          />
-        </DialogContent>
-      </Dialog>
-    </Container>
+        {resources.length === 0 && !loading && !error ? (
+          <Typography>No resources found. Click "Create Resource" to add one.</Typography>
+        ) : (
+          resources.map(resource => (
+            <ResourceCard 
+              key={resource.id} 
+              resource={resource} 
+              onEdit={handleEdit} 
+              onDelete={handleDelete} 
+            />
+          ))
+        )}
+        
+        <Dialog open={isCreateModalOpen || isEditModalOpen} onClose={handleModalClose} maxWidth="sm" fullWidth>
+          <DialogTitle>{editingResource ? 'Edit Resource' : 'Create New Resource'}</DialogTitle>
+          <DialogContent>
+            <ResourceForm 
+              resource={editingResource} 
+              onSave={handleResourceSaved} 
+              onClose={handleModalClose} 
+            />
+          </DialogContent>
+        </Dialog>
+      </Box>
+    </Box>
   );
 };
 

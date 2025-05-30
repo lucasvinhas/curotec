@@ -1,11 +1,10 @@
-import React from 'react';
 import ResourceList from './components/ResourceList';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
+import Box from '@mui/material/Box';
 
 // A simple theme for Material UI
 const theme = createTheme({
@@ -21,6 +20,7 @@ const theme = createTheme({
 
 function App() {
   return (
+    <Box sx={{ minHeight: '100vh', minWidth: '100vw', pt: 4, px: 2}}>
     <ThemeProvider theme={theme}>
       <CssBaseline /> {/* Normalize CSS and apply baseline styles */}
       <AppBar position="static">
@@ -30,10 +30,9 @@ function App() {
           </Typography>
         </Toolbar>
       </AppBar>
-      <Container component="main" sx={{ mt: 2, mb: 2 }}>
-        <ResourceList />
-      </Container>
+      <ResourceList />
     </ThemeProvider>
+    </Box>
   );
 }
 
