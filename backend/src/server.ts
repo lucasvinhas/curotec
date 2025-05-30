@@ -1,9 +1,6 @@
 import express, { Request, Response as ExpressResponse } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
 import cors from 'cors';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import dotenv from 'dotenv';
-dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
@@ -12,6 +9,7 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(cors());
 
+// Resource Model Validation (basic example)
 interface ResourceCreateInput {
   name: string;
   description?: string;
@@ -25,7 +23,7 @@ interface ResourceUpdateInput {
 // Helper for error handling
 const handleError = (res: ExpressResponse, error: any, message: string): ExpressResponse => {
   console.error(message, error);
-  if (error instanceof PrismaClientKnownRequestError) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === 'P2025') {
       return res.status(404).json({ message: 'Resource not found.' });
     }
@@ -53,7 +51,30 @@ app.post('/resources', async (req: Request, res: ExpressResponse): Promise<void>
 // Get all resources
 app.get('/resources', async (req: Request, res: ExpressResponse): Promise<void> => {
   try {
-    const resources = await prisma.resource.findMany();
+    const { name, description } = req.query; // Extract filter query parameters
+
+    const where: Prisma.ResourceWhereInput = {};
+
+    if (name) {
+      where.name = {
+        contains: name as string,
+        mode: 'insensitive', // Case-insensitive search
+      };
+    }
+
+    if (description) {
+      where.description = {
+        contains: description as string,
+        mode: 'insensitive', // Case-insensitive search
+      };
+    }
+
+    const resources = await prisma.resource.findMany({
+      where, // Apply filters
+      orderBy: { // Optional: default ordering
+        updatedAt: 'desc',
+      }
+    });
     res.status(200).json(resources);
   } catch (error) {
     handleError(res, error, 'Failed to retrieve resources:');

@@ -8,9 +8,22 @@ export interface Resource {
 
 const API_BASE_URL = 'http://localhost:3000';
 
+// Define a type for filter parameters
+export interface ResourceFilters {
+  name?: string;
+  description?: string;
+}
+
 // Fetch all resources
-export const getResources = async (): Promise<Resource[]> => {
-  const response = await fetch(`${API_BASE_URL}/resources`);
+export const getResources = async (filters?: ResourceFilters): Promise<Resource[]> => {
+  const queryParams = new URLSearchParams();
+  if (filters) {
+    if (filters.name && filters.name.trim() !== '') queryParams.append('name', filters.name);
+    if (filters.description && filters.description.trim() !== '') queryParams.append('description', filters.description);
+  }
+  
+  const url = `${API_BASE_URL}/resources${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch resources: ${response.statusText}`);
   }
